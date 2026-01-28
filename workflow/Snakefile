@@ -7,7 +7,7 @@ include: "rules/common.smk"
 rule all:
     input:
         "results/filtered/all.snvs.selected.vcf.gz",
-        "results/msa/snvs.fas",
+        "results/msa/snvs.fasta",
         "results/phylogeny/fasttree-snvs.nwk",
         # "results/annotated/all.vcf.gz",
         # "results/qc/multiqc.html",
@@ -437,10 +437,10 @@ rule msa_sample_fasta:
 
 rule concat_fasta:
     input:
-        ref="results/msa/ref.fas",
+        ref="results/msa/ref.fasta",
         samples=expand("results/msa/{sample}.fasta", sample=samples.index)
     output:
-        "results/msa/snvs.fas"
+        "results/msa/snvs.fasta"
     shell:
         """
         cat {input.ref} {input.samples} > {output}
@@ -451,7 +451,7 @@ rule concat_fasta:
 
 rule fasttree:
     input:
-        alignment="results/msa/{alnname}.fas",  # Input alignment file
+        alignment="results/msa/{alnname}.fasta",  # Input alignment file
     output:
         tree="results/phylogeny/fasttree-{alnname}.nwk",  # Output tree file
     log:
