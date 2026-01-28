@@ -10,7 +10,7 @@ configs. In addition, it can be used as base for other extended workflows.
 ## How to use this workflow
 
 ```bash
-snakedeploy deploy-workflow https://github.com/snakemake-workflows/dna-seq-gatk-variant-calling . --tag v2.1.1
+snakedeploy deploy-workflow https://github.com/b-brankovics/bwa-gatk-fasttree-smkwf . --branch main
 # modify config files
 snakemake --cores all --sdm conda
 
