@@ -1,0 +1,6 @@
+name: bwa-samtools
+channels:
+  - bioconda
+dependencies:
+  - bioconda::bwa
+  - bioconda::samtools

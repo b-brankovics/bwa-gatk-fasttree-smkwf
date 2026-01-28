@@ -1,0 +1,9 @@
+name: variant
+channels:
+  - bioconda
+dependencies:
+  - bioconda::picard
+  - bioconda::samtools
+  - bioconda::vcftools
+  - bioconda::bcftools
+  - bioconda::gatk4

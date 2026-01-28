@@ -1,0 +1,6 @@
+name: trimming
+channels:
+  - bioconda
+dependencies:
+  - bioconda::trimmomatic
+  - bioconda::fastp
