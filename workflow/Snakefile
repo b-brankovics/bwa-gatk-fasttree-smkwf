@@ -87,32 +87,6 @@ if "restrict-regions" in config["processing"]:
             "bedextract {wildcards.contig} {input} > {output}"
 
 
-# rule variant_calling:
-#     input:
-#         bam=get_sample_bams_dedup,
-#         bai=get_sample_bai_dedup, 
-#         ref=REFERENCE_FILES["whole_genome"],
-#         reffai=REFERENCE_FILES["whole_genome"] + ".fai",
-#         refdict=REFERENCE_FILES["whole_genome"].rstrip(".fna") + ".dict"
-#     output:
-#         gvcf=temp("gvcfs/{sample}.g.vcf.gz"),
-#         gvcfindex=temp("gvcfs/{sample}.g.vcf.gz.tbi")
-#     log:
-#         "logs/gatk/haplotypecaller/{sample}.log",
-#     conda:
-#         "envs/genomics.yaml"
-#     threads: 
-#         4
-#     params:
-#         extra=get_call_variants_params,
-#     shell:
-#         """
-#         gatk --java-options '-Xmx4g' HaplotypeCaller \
-#         -R {input.ref} -I {input.bam} -O {output.gvcf} {params.extra} \
-#         -ERC GVCF -sample-name {wildcards.sample} > {log} 2>&1
-#         """
-
-
 rule call_variants:
     input:
         bam=get_sample_bams_dedup,
@@ -136,36 +110,6 @@ rule call_variants:
         "v7.6.0/bio/gatk/haplotypecaller"
 
 
-# rule call_variants:
-#     # gatk --java-options -Xmx${MEM} HaplotypeCaller \
-#    	#   --emit-ref-confidence GVCF --sample-ploidy 1 \
-#    	#   --input $ALNFILE --reference $REFGENOME \
-#    	#   --output $GVCF --native-pair-hmm-threads $CPU --sample-name $STRAIN \
-# 	#   -G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation
-#     input:
-#         bam=get_sample_bams_dedup,
-#         bai=get_sample_bai_dedup,
-#         ref="resources/genome.fasta",
-#         idx="resources/genome.dict",
-#         # known="resources/variation.noiupac.vcf.gz",
-#         # tbi="resources/variation.noiupac.vcf.gz.tbi",
-#         regions=(
-#             "results/called/{contig}.regions.bed"
-#             if config["processing"].get("restrict-regions")
-#             else []
-#         ),
-#     output:
-#         gvcf=protected("results/called/{sample}.{contig}.g.vcf.gz"),
-#     log:
-#         "logs/gatk/haplotypecaller/{sample}.{contig}.log",
-#     conda:
-#         "envs/variant.yaml"
-#     params:
-#         extra=get_call_variants_params + " -ERC GVCF -sample-name {wildcards.sample}",
-#     wrapper:
-#         "0.59.0/bio/gatk/haplotypecaller"
-
-
 rule genomics_db_import:
     input:
         gvcfs=expand(
@@ -174,8 +118,6 @@ rule genomics_db_import:
         interval_list="resources/intervals.list",
     output:
         db=directory("results/genomicsdb"),
-    # conda:
-    #     "envs/variant.yaml"
     log:
         "logs/gatk/genomicsdbimport.log",
     params:
@@ -203,8 +145,6 @@ rule genotype_gvcfs:
         ref="resources/genome.fasta",
     output:
         vcf="results/genotyped/all.vcf.gz",
-    # conda:
-    #     "envs/variant.yaml"
     log:
         "logs/gatk/genotypegvcfs.log"
     params:
@@ -214,53 +154,6 @@ rule genotype_gvcfs:
         mem_mb=1024
     wrapper:
         "v7.6.0/bio/gatk/genotypegvcfs"
-
-
-# rule combine_calls:
-#     input:
-#         ref="resources/genome.fasta",
-#         gvcfs=expand(
-#             "results/called/{sample}.{{contig}}.g.vcf.gz", sample=samples.index
-#         ),
-#     output:
-#         gvcf="results/called/all.{contig}.g.vcf.gz",
-#     log:
-#         "logs/gatk/combinegvcfs.{contig}.log",
-#     conda:
-#         "envs/variant.yaml"
-#     wrapper:
-#         "0.74.0/bio/gatk/combinegvcfs"
-
-
-# rule genotype_variants:
-#     input:
-#         ref="resources/genome.fasta",
-#         gvcf="results/called/all.{contig}.g.vcf.gz",
-#     output:
-#         vcf=temp("results/genotyped/all.{contig}.vcf.gz"),
-#     params:
-#         extra=config["params"]["gatk"]["GenotypeGVCFs"],
-#     log:
-#         "logs/gatk/genotypegvcfs.{contig}.log",
-#     conda:
-#         "envs/variant.yaml"
-#     wrapper:
-#         "0.74.0/bio/gatk/genotypegvcfs"
-
-
-# rule merge_variants:
-#     input:
-#         vcfs=lambda w: expand(
-#             "results/genotyped/all.{contig}.vcf.gz", contig=get_contigs()
-#         ),
-#     output:
-#         vcf="results/genotyped/all.vcf.gz",
-#     log:
-#         "logs/picard/merge-genotyped.log",
-#     conda:
-#         "envs/variant.yaml"
-#     wrapper:
-#         "0.74.0/bio/picard/mergevcfs"
 
 
 # include: "rules/filtering.smk"
@@ -276,8 +169,6 @@ rule select_calls:
         # --restrict-alleles-to BIALLELIC --create-output-variant-index false
     log:
         "logs/gatk/selectvariants/{vartype}.log",
-    # conda:
-    #     "envs/variant.yaml"
     wrapper:
         "v7.6.0/bio/gatk/selectvariants"
 
@@ -293,8 +184,6 @@ rule filter_calls:
         extra="",  # optional arguments; could add --genotype-filter-expression 'GQ < 50.0' --genotype-filter-name "genotype_filters" --set-filtered-genotype-to-no-call
     log:
         "logs/gatk/variantfiltration/{vartype}.log",
-    # conda:
-    #     "envs/variant.yaml"
     wrapper:
         "v7.6.0/bio/gatk/variantfiltration"
 
@@ -305,8 +194,6 @@ rule select_pass_calls:
         ref="resources/genome.fasta",
     output:
         vcf="results/filtered/all.{vartype}.selected.vcf.gz",
-    # conda:
-    #     "envs/variant.yaml"
     log:
         "logs/gatk/select-pass/{vartype}.log",
     params:
@@ -318,76 +205,45 @@ rule select_pass_calls:
         "v7.6.0/bio/gatk/selectvariants"
 
 
+# Based on best practices we could add Filter Variants by Variant (Quality Score) Recalibration
+#  Tools involved: VariantRecalibrator, ApplyVQSB
+#  //Need to adjust this part//
 # rule recalibrate_calls:
 #     input:
-#         vcf="results/filtered/all.{vartype}.vcf.gz",
+#         vcf="results/filtered/all.{vartype}.selected.vcf.gz"
 #     output:
-#         vcf=temp("results/filtered/all.{vartype}.recalibrated.vcf.gz"),
+#         vcf=temp("results/filtered/all.{vartype}.recal.vcf.gz"),
 #     params:
 #         extra=config["params"]["gatk"]["VariantRecalibrator"],
 #     log:
 #         "logs/gatk/variantrecalibrator/{vartype}.log",
-#     conda:
-#         "envs/variant.yaml"
 #     wrapper:
-#         "0.74.0/bio/gatk/variantrecalibrator"
-
-
-# rule merge_calls:
+#         "v7.6.0/bio/gatk/variantrecalibrator"
+#
+#
+# rule apply_vqsr:
 #     input:
-#         vcfs=expand(
-#             "results/filtered/all.{vartype}.{filtertype}.vcf.gz",
-#             vartype=["snvs", "indels"],
-#             filtertype="recalibrated"
-#             if config["filtering"]["vqsr"]
-#             else "hardfiltered",
-#         ),
-#     output:
-#         vcf="results/filtered/all.vcf.gz",
-#     log:
-#         "logs/picard/merge-filtered.log",
-#     conda:
-#         "envs/variant.yaml"
-#     wrapper:
-#         "0.74.0/bio/picard/mergevcfs"
-
-
-# # Get sites for phylogeny
-# rule vcf_to_matrix:
-#     input:
-#         vcf="results/filtered/all.vcf.gz",
+#         vcf="results/filtered/all.{vartype}.recal.vcf.gz",
+#         recal="snps.recal",
+#         tranches="snps.tranches",
 #         ref="resources/genome.fasta",
 #     output:
-#         phylip="results/alignment/alignment.phy",
-#         fasta="results/alignment/alignment.fasta",
-#     params:
-#         minimum_coverage=config["params"]["vcf2matrix"]["minimum_coverage"],
-#         minimum_proportion=config["params"]["vcf2matrix"]["minimum_proportion"],
+#         vcf="results/filtered/all.{vartype}.recalibrated.vcf.gz",
 #     log:
-#         "logs/nasp/vcf_to_matrix.log",
-#     conda:
-#         "envs/nasp.yaml"
-#     shell:
-#         """
-#         vcf_to_matrix  --mode commandline \
-#         --reference-fasta {input.ref} --input-files {input.vcf} \
-#         --minimum-coverage {params.minimum_coverage} \
-#         --minimum-proportion {params.minimum_proportion} \
-#         --num-threads {threads} \
-#         --matrix-folder results/alignment \
-#         --stats-folder results/nasp-stats \
-#         > {log} 2>&1
-#         """
-
+#         "logs/gatk/applyvqsr.log",
+#     params:
+#         mode="SNP",  # set mode, must be either SNP, INDEL or BOTH
+#         extra="",  # optional
+#     resources:
+#         mem_mb=1024,
+#     wrapper:
+#         "v7.6.0/bio/gatk/applyvqsr"
 
 
 # include: "rules/stats.smk"
 include: "rules/qc.smk"
 # include: "rules/annotation.smk"
 
-# print_fas() {
-#   printf ">%s\n%s\n" $1 $(bcftools query -s $1 -f '[%IUPACGT]' $2 | tr -d '\n')
-# }
 
 # filter before extracting FASTA
 rule bcf_filter_o_vcf_gz:
@@ -402,6 +258,7 @@ rule bcf_filter_o_vcf_gz:
         extra="",
     wrapper:
         "v8.1.1/bio/bcftools/filter"
+
 
 rule msa_ref_fasta:
     input:
