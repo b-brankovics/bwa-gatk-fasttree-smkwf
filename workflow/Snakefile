@@ -10,7 +10,7 @@ rule all:
         "results/msa/snvs.fasta",
         "results/phylogeny/fasttree-snvs.nwk",
         # "results/annotated/all.vcf.gz",
-        # "results/qc/multiqc.html",
+        "qc/multiqc.html",
         # "results/plots/depths.svg",
         # "results/plots/allele-freqs.svg",
 
