@@ -21,6 +21,7 @@ rule all:
 # include: "rules/ref.smk"
 # skipped variants (vep)
 
+
 checkpoint genome_faidx:
     input:
         "resources/genome.fasta",
@@ -99,10 +100,10 @@ rule call_variants:
         gvcf=protected("results/called/{sample}.g.vcf.gz"),
     log:
         "logs/gatk/haplotypecaller/{sample}.log",
-    params: # Some need to be moved to config
-        extra="-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation " +
-              config["params"]["gatk"]["HaplotypeCaller"] +
-              " -sample-name {sample}"       
+    params:  # Some need to be moved to config
+        extra="-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation "
+        + config["params"]["gatk"]["HaplotypeCaller"]
+        + " -sample-name {sample}",
     threads: 4
     resources:
         mem_mb=1024,
@@ -112,9 +113,7 @@ rule call_variants:
 
 rule genomics_db_import:
     input:
-        gvcfs=expand(
-            "results/called/{sample}.g.vcf.gz", sample=samples.index
-        ),
+        gvcfs=expand("results/called/{sample}.g.vcf.gz", sample=samples.index),
         interval_list="resources/intervals.list",
     output:
         db=directory("results/genomicsdb"),
@@ -136,6 +135,7 @@ rule genomics_db_import:
 # Genotype the GVCFs
 #####################################
 
+
 rule genotype_gvcfs:
     input:
         genomicsdb="results/genomicsdb",
@@ -146,17 +146,18 @@ rule genotype_gvcfs:
     output:
         vcf="results/genotyped/all.vcf.gz",
     log:
-        "logs/gatk/genotypegvcfs.log"
+        "logs/gatk/genotypegvcfs.log",
     params:
         extra="",  # optional
-        java_opts="", # optional
+        java_opts="",  # optional
     resources:
-        mem_mb=1024
+        mem_mb=1024,
     wrapper:
         "v7.6.0/bio/gatk/genotypegvcfs"
 
 
 # include: "rules/filtering.smk"
+
 
 rule select_calls:
     input:
@@ -242,6 +243,8 @@ rule select_pass_calls:
 
 # include: "rules/stats.smk"
 include: "rules/qc.smk"
+
+
 # include: "rules/annotation.smk"
 
 
@@ -266,7 +269,7 @@ rule msa_ref_fasta:
     output:
         temp("results/msa/ref.fasta"),
     conda:
-        "envs/variant.yaml",
+        "envs/variant.yaml"
     log:
         "logs/bcftools/filter-msa-ref.log",
     shell:
@@ -282,7 +285,7 @@ rule msa_sample_fasta:
     output:
         temp("results/msa/{sample}.fasta"),
     conda:
-        "envs/variant.yaml",
+        "envs/variant.yaml"
     log:
         "logs/bcftools/filter-msa-{sample}.log",
     shell:
@@ -295,9 +298,9 @@ rule msa_sample_fasta:
 rule concat_fasta:
     input:
         ref="results/msa/ref.fasta",
-        samples=expand("results/msa/{sample}.fasta", sample=samples.index)
+        samples=expand("results/msa/{sample}.fasta", sample=samples.index),
     output:
-        "results/msa/snvs.fasta"
+        "results/msa/snvs.fasta",
     shell:
         """
         cat {input.ref} {input.samples} > {output}
@@ -305,6 +308,7 @@ rule concat_fasta:
 
 
 # Phylogeny
+
 
 rule fasttree:
     input:

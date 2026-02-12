@@ -14,7 +14,7 @@
 
 rule fastp_trim_pe:
     input:
-        unpack(get_fastq), # returns {"r1": fastqs.fq1, "r2": fastqs.fq2}
+        unpack(get_fastq),  # returns {"r1": fastqs.fq1, "r2": fastqs.fq2}
     output:
         # forward_trimmed=temp("trimmed/{sample}_R1.fastq.gz"),
         # rev_trimmed=temp("trimmed/{sample}_R2.fastq.gz"),
@@ -34,8 +34,7 @@ rule fastp_trim_pe:
         # adapter_auto="--detect_adapter_for_pe"
         # adapter_truseq="--adapter_sequence=AGATCGGAAGAGCACACGTCTGAACTCCAGTCA --adapter_sequence_r2=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
         # extra="--adapter_sequence AGATCGGAAGAGC"
-    threads:
-        4
+    threads: 4
     shell:
         """
         fastp -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} \
@@ -49,21 +48,20 @@ rule bwa_mem:
         ref="resources/genome.fasta",
         reads=get_trimmed_reads,
         idx=rules.bwa_index.output,
-    output: 
+    output:
         # temp("aligned/{sample}.bam")
         temp("results/mapped/{sample}-{unit}.sorted.bam"),
     log:
         "logs/bwa_mem/{sample}-{unit}.log",
     conda:
         "../envs/bwa-samtools.yaml"
-    threads:
-        4
+    threads: 4
     shell:
         """
         bwa mem {input.ref} {input.reads} -t {threads} 2> {log} |
         samtools sort -o {output} 2>> {log}
         """
-        
+
 
 # rule map_reads:
 #     input:
@@ -86,15 +84,14 @@ rule bwa_mem:
 # Rule to add or replace read groups using Picard
 rule add_read_groups:
     input:
-        "results/mapped/{sample}-{unit}.sorted.bam"
+        "results/mapped/{sample}-{unit}.sorted.bam",
     output:
-        temp("results/mapped/{sample}-{unit}.rg.bam")
+        temp("results/mapped/{sample}-{unit}.rg.bam"),
     log:
-        "logs/picard_rg/{sample}-{unit}.log"
+        "logs/picard_rg/{sample}-{unit}.log",
     conda:
         "../envs/variant.yaml"
-    threads:
-        4
+    threads: 4
     params:
         platform=lambda wildcards: get_platform(wildcards),
     shell:
@@ -104,10 +101,11 @@ rule add_read_groups:
         -RGPU unit{wildcards.unit} -RGSM {wildcards.sample} 2> {log}
         """
 
+
 # ## Mark duplicates using Picard
 rule mark_duplicates:
     input:
-        "results/mapped/{sample}-{unit}.rg.bam"
+        "results/mapped/{sample}-{unit}.rg.bam",
     output:
         bam=protected("results/dedup/{sample}-{unit}.bam"),
         metrics="results/qc/dedup/{sample}-{unit}.metrics.txt",
@@ -117,8 +115,7 @@ rule mark_duplicates:
         "../envs/variant.yaml"
     params:
         config["params"]["picard"]["MarkDuplicates"],
-    threads:
-        4
+    threads: 4
     shell:
         """
         picard MarkDuplicates \
@@ -173,8 +170,6 @@ rule samtools_index:
 #             > {log} 2>&1
 #         """""
 #         "0.74.0/bio/gatk/baserecalibrator"
-
-
 # rule apply_base_quality_recalibration:
 #     input:
 #         bam=get_recal_input(),
@@ -198,7 +193,7 @@ rule samtools_index:
 #         gatk ApplyBQSR \
 #             --java-options '{params.java}' \
 #             --input {input.bam} \
-#             --reference {input.ref} \        
+#             --reference {input.ref} \
 #             --bqsr-recal-file {input.recal_table} \
 #             {params.extra} \
 #             --output {output.bam} \
