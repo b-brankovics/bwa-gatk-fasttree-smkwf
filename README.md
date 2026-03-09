@@ -16,9 +16,6 @@ snakemake --cores all --sdm conda
 ```
 
 ```meramid
----
-title: DAG
----
 flowchart TB
 	id0[all]
 	id1[select_pass_calls]
