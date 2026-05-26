@@ -16,7 +16,7 @@ snakemake --cores all --sdm conda
 ```
 
 ```meramid
-flowchart TB
+flowchart TD
 	id0[all]
 	id1[select_pass_calls]
 	id2[filter_calls]
