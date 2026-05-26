@@ -15,7 +15,7 @@ snakedeploy deploy-workflow https://github.com/b-brankovics/bwa-gatk-fasttree-sm
 snakemake --cores all --sdm conda
 ```
 
-```meramid
+```mermaid
 flowchart TD
 	id0[all]
 	id1[select_pass_calls]
