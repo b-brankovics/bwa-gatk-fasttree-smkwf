@@ -1,13 +1,20 @@
 rule fastqc:
     input:
-        unpack(get_fastq),
+        "results/trimmed/{sample}-{unit}.{read}.fastq.gz"
     output:
-        html="results/qc/fastqc/{sample}-{unit}.html",
-        zip="results/qc/fastqc/{sample}-{unit}.zip",
+        html="results/qc/fastqc/{sample}-{unit}.{read}_fastqc.html",
+        zip="results/qc/fastqc/{sample}-{unit}.{read}_fastqc.zip"
     log:
-        "logs/fastqc/{sample}-{unit}.log",
+        "logs/fastqc/{sample}-{unit}.{read}.log"
+    threads:
+        4
+    resources:
+        mem_mb=8000
+    wildcard_constraints:
+        read="1|2"
     wrapper:
-        "0.74.0/bio/fastqc"
+        "v7.6.0/bio/fastqc"
+
 
 
 rule samtools_stats:
@@ -18,25 +25,49 @@ rule samtools_stats:
     log:
         "logs/samtools-stats/{sample}-{unit}.log",
     wrapper:
-        "0.74.0/bio/samtools/stats"
+        "v9.4.2/bio/samtools/stats"
 
 
 rule multiqc:
     input:
+        # FastQC
         expand(
-            [
-                "results/qc/samtools-stats/{u.sample}-{u.unit}.txt",
-                "results/qc/fastqc/{u.sample}-{u.unit}.zip",
-                "results/qc/dedup/{u.sample}-{u.unit}.metrics.txt",
-            ],
-            u=units.itertuples(),
+            "results/qc/fastqc/{sample}-{unit}.{read}_fastqc.zip",
+            sample=samples.index,
+            unit=units["unit"],
+            read=[1, 2]
         ),
+
+        # fastp reports
+        expand(
+            "results/qc/fastp/{sample}-{unit}_fastp.json",
+            sample=samples.index,
+            unit=units["unit"]
+        ),
+
+        # samtools stats
+        expand(
+            "results/qc/samtools-stats/{sample}-{unit}.txt",
+            sample=samples.index,
+            unit=units["unit"]
+        ),
+
+        # Picard duplicate metrics
+        expand(
+            "results/qc/dedup/{sample}-{unit}.metrics.txt",
+            sample=samples.index,
+            unit=units["unit"]
+        )
+
     output:
-        "qc/multiqc.html",
-        directory("qc_data/multiqc_data"),
+        html="results/qc/multiqc.html",
+        data=directory("results/qc/multiqc_data")
+
     params:
-        extra="--verbose",  # Optional: extra parameters for multiqc.
+        extra="--verbose"
+
     log:
-        "logs/multiqc.log",
+        "logs/multiqc.log"
+
     wrapper:
-        "v8.1.1/bio/multiqc"
+        "v9.4.2/bio/multiqc"

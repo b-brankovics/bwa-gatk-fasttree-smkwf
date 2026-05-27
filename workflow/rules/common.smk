@@ -38,14 +38,6 @@ wildcard_constraints:
 
 ##### Helper functions #####
 
-
-# contigs in reference genome
-def get_contigs():
-    with checkpoints.genome_faidx.get().output[0].open() as fai:
-        # return pd.read_table(fai, header=None, usecols=[0], squeeze=True, dtype=str)
-        return pd.read_table(fai, header=None, usecols=[0], dtype=str).squeeze("columns")
-
-
 def get_fastq(wildcards):
     """Get fastq files of given sample-unit."""
     fastqs = units.loc[(wildcards.sample, wildcards.unit), ["fq1", "fq2"]].dropna()
@@ -62,25 +54,9 @@ def get_platform(wildcards):
     return "ILLUMINA"
 
 
-def get_reads(wildcards):
-    """Get fastq files of given sample-unit."""
-    fastqs = units.loc[(wildcards.sample, wildcards.unit), ["fq1", "fq2"]].dropna()
-    if len(fastqs) == 2:
-        return [fastqs.fq1, fastqs.fq2]
-    return [fastqs.fq1]
-
-
 def is_single_end(sample, unit):
     """Return True if sample-unit is single end."""
     return pd.isnull(units.loc[(sample, unit), "fq2"])
-
-
-def get_read_group(wildcards):
-    """Denote sample name and platform in read group."""
-    return r"-R '@RG\tID:{sample}\tSM:{sample}\tPL:{platform}'".format(
-        sample=wildcards.sample,
-        platform=units.loc[(wildcards.sample, wildcards.unit), "platform"],
-    )
 
 
 def get_trimmed_reads(wildcards):
@@ -167,6 +143,29 @@ def get_vartype_arg(wildcards):
         "SNP" if wildcards.vartype == "snvs" else "INDEL"
     )
 
-
 def get_filter(wildcards):
     return {"snv-hard-filter": config["filtering"]["hard"][wildcards.vartype]}
+
+reference = config["reference"]
+
+if reference["source"] == "ncbi":
+    if "accession" not in reference:
+        raise ValueError(
+            "reference.accession required when source='ncbi'"
+        )
+
+elif reference["source"] == "local":
+    if "fasta" not in reference:
+        raise ValueError(
+            "reference.fasta required when source='local'"
+        )
+
+    if "gff" not in reference:
+        raise ValueError(
+            "reference.gff required when source='local'"
+        )
+
+else:
+    raise ValueError(
+        "reference.source must be 'local' or 'ncbi'"
+    )

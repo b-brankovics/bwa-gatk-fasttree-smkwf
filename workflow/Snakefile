@@ -9,20 +9,75 @@ rule all:
         "results/filtered/all.snvs.selected.vcf.gz",
         "results/msa/snvs.fasta",
         "results/phylogeny/fasttree-snvs.nwk",
-        # "results/annotated/all.vcf.gz",
-        "qc/multiqc.html",
-        # "results/plots/depths.svg",
-        # "results/plots/allele-freqs.svg",
+        "results/qc/multiqc.html",
 
 
 ##### Modules #####
 
+rule prepare_reference:
+    """
+    Prepare reference genome and annotation
+    from local files or NCBI.
+    """
+    output:
+        fasta="resources/genome.fasta",
+        gff="resources/genes.gff3"
+    params:
+        source=config["reference"]["source"],
+        accession=config["reference"].get("accession", ""),
+        local_fasta=config["reference"].get("fasta", ""),
+        local_gff=config["reference"].get("gff", "")
+    conda:
+        "envs/ncbi-datasets.yaml"
+    log:
+        "logs/reference.log"
+    shell:
+        """
+        mkdir -p resources
+        mkdir -p tmp/reference
 
-# include: "rules/ref.smk"
-# skipped variants (vep)
+        # Always clean up temp folder afterwards
+        trap 'rm -rf tmp/reference' EXIT
 
+        if [ "{params.source}" = "local" ]; then
 
-checkpoint genome_faidx:
+            ln -sf $(realpath {params.local_fasta}) {output.fasta}
+            ln -sf $(realpath {params.local_gff}) {output.gff}
+
+        elif [ "{params.source}" = "ncbi" ]; then
+
+            datasets download genome accession {params.accession} \
+                --include genome,gff3 \
+                --filename tmp/reference/reference.zip \
+                > {log} 2>&1
+
+            unzip -o tmp/reference/reference.zip \
+                -d tmp/reference >> {log} 2>&1
+
+            GENOME=$(find tmp/reference -name "*genomic.fna" | head -n1)
+            GFF=$(find tmp/reference -name "*.gff*" | head -n1)
+
+            if [ -z "$GENOME" ] || [ -z "$GFF" ]; then
+                echo "Genome or GFF not found in downloaded dataset" >&2
+                exit 1
+            fi
+
+            cp "$GENOME" {output.fasta}
+            cp "$GFF" {output.gff}
+
+        else
+            echo "Invalid reference source: {params.source}" >&2
+            exit 1
+        fi
+        """
+
+# And look in to this: https://snakemake-wrappers.readthedocs.io/en/stable/wrappers/bio/sra-tools/fasterq-dump.html 
+# Update the rest and make more in wrappers.
+
+# Make a distinction between local genomes and remote genomes that need to be fetched and/ or both should also be supported.
+# Two tables one with local genome logic and another with remote genome logic? Or one table with a column that specifies local vs remote and then logic in the rule to handle both cases?
+
+rule genome_faidx:
     input:
         "resources/genome.fasta",
     output:
@@ -72,9 +127,6 @@ rule bwa_index:
 
 include: "rules/mapping.smk"
 
-
-# include: "rules/calling.smk"
-
 if "restrict-regions" in config["processing"]:
 
     rule compose_regions:
@@ -100,10 +152,10 @@ rule call_variants:
         gvcf=protected("results/called/{sample}.g.vcf.gz"),
     log:
         "logs/gatk/haplotypecaller/{sample}.log",
-    params:  # Some need to be moved to config
-        extra="-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation "
-        + config["params"]["gatk"]["HaplotypeCaller"]
-        + " -sample-name {sample}",
+    params: # Some need to be moved to config
+        extra="-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation " +
+              config["params"]["gatk"]["HaplotypeCaller"] +
+              " -sample-name {sample}"       
     threads: 4
     resources:
         mem_mb=1024,
@@ -113,7 +165,9 @@ rule call_variants:
 
 rule genomics_db_import:
     input:
-        gvcfs=expand("results/called/{sample}.g.vcf.gz", sample=samples.index),
+        gvcfs=expand(
+            "results/called/{sample}.g.vcf.gz", sample=samples.index
+        ),
         interval_list="resources/intervals.list",
     output:
         db=directory("results/genomicsdb"),
@@ -135,7 +189,6 @@ rule genomics_db_import:
 # Genotype the GVCFs
 #####################################
 
-
 rule genotype_gvcfs:
     input:
         genomicsdb="results/genomicsdb",
@@ -146,17 +199,14 @@ rule genotype_gvcfs:
     output:
         vcf="results/genotyped/all.vcf.gz",
     log:
-        "logs/gatk/genotypegvcfs.log",
+        "logs/gatk/genotypegvcfs.log"
     params:
         extra="",  # optional
-        java_opts="",  # optional
+        java_opts="", # optional
     resources:
-        mem_mb=1024,
+        mem_mb=1024
     wrapper:
         "v7.6.0/bio/gatk/genotypegvcfs"
-
-
-# include: "rules/filtering.smk"
 
 
 rule select_calls:
@@ -205,48 +255,7 @@ rule select_pass_calls:
     wrapper:
         "v7.6.0/bio/gatk/selectvariants"
 
-
-# Based on best practices we could add Filter Variants by Variant (Quality Score) Recalibration
-#  Tools involved: VariantRecalibrator, ApplyVQSB
-#  //Need to adjust this part//
-# rule recalibrate_calls:
-#     input:
-#         vcf="results/filtered/all.{vartype}.selected.vcf.gz"
-#     output:
-#         vcf=temp("results/filtered/all.{vartype}.recal.vcf.gz"),
-#     params:
-#         extra=config["params"]["gatk"]["VariantRecalibrator"],
-#     log:
-#         "logs/gatk/variantrecalibrator/{vartype}.log",
-#     wrapper:
-#         "v7.6.0/bio/gatk/variantrecalibrator"
-#
-#
-# rule apply_vqsr:
-#     input:
-#         vcf="results/filtered/all.{vartype}.recal.vcf.gz",
-#         recal="snps.recal",
-#         tranches="snps.tranches",
-#         ref="resources/genome.fasta",
-#     output:
-#         vcf="results/filtered/all.{vartype}.recalibrated.vcf.gz",
-#     log:
-#         "logs/gatk/applyvqsr.log",
-#     params:
-#         mode="SNP",  # set mode, must be either SNP, INDEL or BOTH
-#         extra="",  # optional
-#     resources:
-#         mem_mb=1024,
-#     wrapper:
-#         "v7.6.0/bio/gatk/applyvqsr"
-
-
-# include: "rules/stats.smk"
 include: "rules/qc.smk"
-
-
-# include: "rules/annotation.smk"
-
 
 # filter before extracting FASTA
 rule bcf_filter_o_vcf_gz:
@@ -269,7 +278,7 @@ rule msa_ref_fasta:
     output:
         temp("results/msa/ref.fasta"),
     conda:
-        "envs/variant.yaml"
+        "envs/variant.yaml",
     log:
         "logs/bcftools/filter-msa-ref.log",
     shell:
@@ -285,7 +294,7 @@ rule msa_sample_fasta:
     output:
         temp("results/msa/{sample}.fasta"),
     conda:
-        "envs/variant.yaml"
+        "envs/variant.yaml",
     log:
         "logs/bcftools/filter-msa-{sample}.log",
     shell:
@@ -298,9 +307,9 @@ rule msa_sample_fasta:
 rule concat_fasta:
     input:
         ref="results/msa/ref.fasta",
-        samples=expand("results/msa/{sample}.fasta", sample=samples.index),
+        samples=expand("results/msa/{sample}.fasta", sample=samples.index)
     output:
-        "results/msa/snvs.fasta",
+        "results/msa/snvs.fasta"
     shell:
         """
         cat {input.ref} {input.samples} > {output}
@@ -308,8 +317,6 @@ rule concat_fasta:
 
 
 # Phylogeny
-
-
 rule fasttree:
     input:
         alignment="results/msa/{alnname}.fasta",  # Input alignment file

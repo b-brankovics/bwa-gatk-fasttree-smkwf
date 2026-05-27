@@ -10,19 +10,20 @@ properties:
   units:
     type: string
 
-  ref:
+  reference:
     type: object
     properties:
-      species:
+      source:
         type: string
-      build:
+        enum: ["local", "ncbi"]
+      accession:
         type: string
-      release:
-        type: integer
+      fasta:
+        type: string
+      gff:
+        type: string
     required:
-      - species
-      - build
-      - release
+      - source
 
   filtering:
     type: object
@@ -88,7 +89,7 @@ properties:
 required:
   - samples
   - units
-  - ref
+  - reference
   - filtering
   - processing
   - params
