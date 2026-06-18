@@ -17,6 +17,19 @@ rule all:
 
 ##### Modules #####
 
+rule get_fastq_pe_gz:
+    output:
+        # the wildcard name must be accession, pointing to an SRA number
+        "resources/reads/{accession}_1.fastq.gz",
+        "resources/reads/{accession}_2.fastq.gz",
+    log:
+        "logs/fasterq-dump/{accession}.gz.log"
+    params:
+        extra="--skip-technical"
+    threads: 6  # defaults to 6
+    wrapper:
+        "v9.8.0/bio/sra-tools/fasterq-dump"
+
 
 # include: "rules/ref.smk"
 # skipped variants (vep)
@@ -52,7 +65,7 @@ rule genome_dict:
     log:
         "logs/samtools/create_dict.log",
     conda:
-        "envs/samtools.yaml"
+        "envs/bwa-samtools.yaml"
     cache: True
     shell:
         "samtools dict {input} > {output} 2> {log} "
