@@ -46,23 +46,63 @@ rule fastp_trim_pe:
 # Rule to align reads to the reference genome using BWA MEM
 rule bwa_mem:
     input:
-        ref="resources/genome.fasta",
         reads=get_trimmed_reads,
-        idx=rules.bwa_index.output,
-    output: 
-        # temp("aligned/{sample}.bam")
+        # Index needs to be a list of all index files created by bwa
+        idx=multiext("resources/genome.fasta", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+    output:
         temp("results/mapped/{sample}-{unit}.sorted.bam"),
     log:
         "logs/bwa_mem/{sample}-{unit}.log",
-    conda:
-        "../envs/bwa-samtools.yaml"
-    threads:
-        4
-    shell:
-        """
-        bwa mem {input.ref} {input.reads} -t {threads} 2> {log} |
-        samtools sort -o {output} 2>> {log}
-        """
+    params:
+        # '@RG\tID:{sample}\tSM:{sample}\tLB:lib{unit}\tPL:{platform}\tPU:unit{unit}',
+        # extra=r"-R '@RG\tID:{sample}\tSM:{sample}'",
+        sorting="samtools",  # Can be 'none', 'samtools' or 'picard'.
+        sort_order="coordinate",  # Can be 'queryname' or 'coordinate'.
+        sort_extra="",  # Extra args for samtools/picard.
+    threads: 8
+    wrapper:
+        "v9.9.0/bio/bwa/mem"
+
+# rule bwa_mem2_mem:
+#     input:
+#         ref="resources/genome.fasta",
+#         reads=get_trimmed_reads,
+#         # Index needs to be a list of all index files created by bwa
+#         idx=multiext("resources/genome.fasta", ".amb", ".ann", ".bwt", ".pac", ".sa"),
+#     output:
+#         # "mapped/{sample}.bam",
+#         temp("results/mapped/{sample}-{unit}.sorted.bam"),
+#     log:
+#         "logs/bwa_mem2/{sample}-{unit}.log",
+#     params:
+#         # '@RG\tID:{sample}\tSM:{sample}\tLB:lib{unit}\tPL:{platform}\tPU:unit{unit}',
+#         # extra=r"-R '@RG\tID:{sample}\tSM:{sample}'",
+#         sort="samtools",  # Can be 'none', 'samtools', or 'picard'.
+#         sort_order="coordinate",  # Can be 'coordinate' (default) or 'queryname'.
+#         sort_extra="",  # Extra args for samtools/picard sorts.
+#     threads: 8
+#     wrapper:
+#         "v9.4.1/bio/bwa-mem2/mem"
+
+# rule bwa_mem:
+#     input:
+#         ref="resources/genome.fasta",
+#         reads=get_trimmed_reads,
+#         idx=rules.bwa_index.output,
+#     output: 
+#         # temp("aligned/{sample}.bam")
+#         temp("results/mapped/{sample}-{unit}.sorted.bam"),
+#     log:
+#         "logs/bwa_mem/{sample}-{unit}.log",
+#     conda:
+#         "../envs/bwa-samtools.yaml"
+#     threads:
+#         4
+#     shell:
+#         """
+#         bwa mem {input.ref} {input.reads} -t {threads} 2> {log} |
+#         samtools sort -o {output} 2>> {log}
+#         """
         
 
 # rule map_reads:
