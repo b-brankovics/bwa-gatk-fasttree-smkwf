@@ -29,6 +29,8 @@ units.index = units.index.set_levels(
 validate(units, schema="../schemas/units.schema.yaml")
 
 
+ref_id = config["ref"]["accession"]
+
 ##### Wildcard constraints #####
 wildcard_constraints:
     vartype="snvs|indels",

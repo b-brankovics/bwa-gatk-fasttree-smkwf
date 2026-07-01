@@ -17,6 +17,32 @@ rule all:
 
 ##### Modules #####
 
+
+rule get_genome:
+    """
+    Download data from NCBI and place it to correct location
+    """
+    output:
+        fasta="resources/genome.fasta",
+        zip=temp("resources/datasets/ref.zip"),
+        dir=temp(directory("resources/datasets/ref"))
+    # wildcard_constraints:
+    #     sample=ACCESSION_SAMPLES
+    conda:
+        "envs/ncbi-datasets.yaml"
+    log:
+        "logs/datasets/ref.log",
+    params:
+        accession=ref_id,
+    shell:
+        """
+        datasets download genome accession {params.accession} --include genome --filename {output.zip}
+        unzip {output.dir}.zip -d {output.dir}
+        mv {output.dir}/ncbi_dataset/data/{params.accession}/{params.accession}*_genomic.fna {output.fasta}
+        """
+      
+
+
 rule get_fastq_pe_gz:
     output:
         # the wildcard name must be accession, pointing to an SRA number

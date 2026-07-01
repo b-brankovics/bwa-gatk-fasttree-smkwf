@@ -13,16 +13,10 @@ properties:
   ref:
     type: object
     properties:
-      species:
+      accession:
         type: string
-      build:
-        type: string
-      release:
-        type: integer
     required:
-      - species
-      - build
-      - release
+      - accession
 
   filtering:
     type: object

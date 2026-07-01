@@ -3,12 +3,8 @@ units: config/units.tsv
 
 # ref is not used at the moment; need to refine this stpe
 ref:
-  # ensembl species name
-  species: homo_sapiens
-  # ensembl release
-  release: 98
-  # genome build
-  build: GRCh38
+  # NCBI/ENA/DBJ assembly accession, e.g. GCA_000001405.28
+  accession: GCF_000185945.1
 
 filtering:
   # Set to true in order to apply machine learning based recalibration of
