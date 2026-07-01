@@ -53,8 +53,10 @@ rule intervals_from_fai:
         "resources/genome.fasta.fai",
     output:
         "resources/intervals.list",
+    log:
+        "logs/intervals-from-fai.log",
     shell:
-        "cut -f1 {input} > {output}"
+        "cut -f1 {input} > {output} 2> {log}"
 
 
 rule genome_dict:
@@ -311,6 +313,8 @@ rule concat_fasta:
         samples=expand("results/msa/{sample}.fasta", sample=samples.index)
     output:
         "results/msa/snvs.fasta"
+    log:
+        "logs/concat_fasta.log",
     shell:
         """
         cat {input.ref} {input.samples} > {output}
