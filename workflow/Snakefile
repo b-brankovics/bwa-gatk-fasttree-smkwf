@@ -137,7 +137,7 @@ rule call_variants:
         # known="resources/variation.noiupac.vcf.gz",
         # tbi="resources/variation.noiupac.vcf.gz.tbi",
     output:
-        gvcf=protected("results/called/{sample}.g.vcf.gz"),
+        gvcf="results/called/{sample}.g.vcf.gz",
     log:
         "logs/gatk/haplotypecaller/{sample}.log",
     params: # Some need to be moved to config
