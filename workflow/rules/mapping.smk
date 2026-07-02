@@ -149,7 +149,7 @@ rule mark_duplicates:
     input:
         "results/mapped/{sample}-{unit}.rg.bam"
     output:
-        bam=protected("results/dedup/{sample}-{unit}.bam"),
+        bam="results/dedup/{sample}-{unit}.bam",
         metrics="results/qc/dedup/{sample}-{unit}.metrics.txt",
     log:
         "logs/picard/dedup/{sample}-{unit}.log",
