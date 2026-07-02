@@ -9,10 +9,6 @@ rule all:
         "results/filtered/all.snvs.selected.vcf.gz",
         "results/msa/snvs.fasta",
         "results/phylogeny/fasttree-snvs.nwk",
-        # "results/annotated/all.vcf.gz",
-        # "results/qc/multiqc.html",
-        # "results/plots/depths.svg",
-        # "results/plots/allele-freqs.svg",
 
 
 ##### Modules #####
@@ -134,8 +130,6 @@ rule call_variants:
         bai=get_sample_bai_dedup,
         ref="resources/genome.fasta",
         idx="resources/genome.dict",
-        # known="resources/variation.noiupac.vcf.gz",
-        # tbi="resources/variation.noiupac.vcf.gz.tbi",
     output:
         gvcf="results/called/{sample}.g.vcf.gz",
     log:
@@ -207,7 +201,6 @@ rule select_calls:
         vcf=temp("results/filtered/all.{vartype}.raw.vcf.gz"),
     params:
         extra=get_vartype_arg,
-        # --restrict-alleles-to BIALLELIC --create-output-variant-index false
     log:
         "logs/gatk/selectvariants/{vartype}.log",
     wrapper:
