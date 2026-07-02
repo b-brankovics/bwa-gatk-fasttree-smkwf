@@ -93,7 +93,7 @@ rule genome_dict:
     log:
         "logs/samtools/create_dict.log",
     conda:
-        "envs/bwa-samtools.yaml"
+        "envs/samtools.yaml"
     cache: True
     shell:
         "samtools dict {input} > {output} 2> {log} "
