@@ -3,4 +3,4 @@ channels:
   - bioconda
 dependencies:
   - bioconda::bwa
-  - bioconda::samtools
+  - bioconda::samtools==1.23.1
