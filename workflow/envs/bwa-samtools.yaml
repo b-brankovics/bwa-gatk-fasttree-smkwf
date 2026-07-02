@@ -2,5 +2,5 @@ name: bwa-samtools
 channels:
   - bioconda
 dependencies:
-  - bioconda::bwa
+  - bioconda::bwa=0.7.19
   - bioconda::samtools==1.23.1
