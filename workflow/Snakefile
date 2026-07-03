@@ -21,13 +21,13 @@ rule get_genome:
     output:
         fasta="resources/genome.fasta",
         zip=temp("resources/datasets/ref.zip"),
-        dir=temp(directory("resources/datasets/ref"))
+        dir=temp(directory("resources/datasets/ref")),
+    log:
+        "logs/datasets/ref.log",
     # wildcard_constraints:
     #     sample=ACCESSION_SAMPLES
     conda:
         "envs/ncbi-datasets.yaml"
-    log:
-        "logs/datasets/ref.log",
     params:
         accession=ref_id,
     shell:
@@ -36,7 +36,6 @@ rule get_genome:
         unzip {output.dir}.zip -d {output.dir}
         mv {output.dir}/ncbi_dataset/data/{params.accession}/{params.accession}*_genomic.fna {output.fasta}
         """
-      
 
 
 rule get_fastq_pe_gz:
@@ -45,16 +44,17 @@ rule get_fastq_pe_gz:
         "resources/reads/{accession}_1.fastq.gz",
         "resources/reads/{accession}_2.fastq.gz",
     log:
-        "logs/fasterq-dump/{accession}.gz.log"
-    params:
-        extra="--skip-technical"
+        "logs/fasterq-dump/{accession}.gz.log",
     threads: 6  # defaults to 6
+    params:
+        extra="--skip-technical",
     wrapper:
         "v9.8.0/bio/sra-tools/fasterq-dump"
 
 
 # include: "rules/ref.smk"
 # skipped variants (vep)
+
 
 checkpoint genome_faidx:
     input:
@@ -88,9 +88,9 @@ rule genome_dict:
         "resources/genome.dict",
     log:
         "logs/samtools/create_dict.log",
+    cache: True
     conda:
         "envs/samtools.yaml"
-    cache: True
     shell:
         "samtools dict {input} > {output} 2> {log} "
 
@@ -135,35 +135,33 @@ rule call_variants:
         gvcf="results/called/{sample}.g.vcf.gz",
     log:
         "logs/gatk/haplotypecaller/{sample}.log",
-    params: # Some need to be moved to config
-        extra="-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation " +
-              config["params"]["gatk"]["HaplotypeCaller"] +
-              " -sample-name {sample}"       
     threads: 4
     resources:
         mem_mb=1024,
+    params:  # Some need to be moved to config
+        extra="-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation "
+        + config["params"]["gatk"]["HaplotypeCaller"]
+        + " -sample-name {sample}",
     wrapper:
         "v7.6.0/bio/gatk/haplotypecaller"
 
 
 rule genomics_db_import:
     input:
-        gvcfs=expand(
-            "results/called/{sample}.g.vcf.gz", sample=samples.index
-        ),
+        gvcfs=expand("results/called/{sample}.g.vcf.gz", sample=samples.index),
         interval_list="resources/intervals.list",
     output:
         db=directory("results/genomicsdb"),
     log:
         "logs/gatk/genomicsdbimport.log",
+    threads: 2
+    resources:
+        mem_mb=lambda wildcards, input: max([input.size_mb * 1.6, 200]),
     params:
         intervals=lambda w, input: input.interval_list,
         db_action="create",  # optional
         extra="",  # optional
         java_opts="",  # optional
-    threads: 2
-    resources:
-        mem_mb=lambda wildcards, input: max([input.size_mb * 1.6, 200]),
     wrapper:
         "v7.6.0/bio/gatk/genomicsdbimport"
 
@@ -171,6 +169,7 @@ rule genomics_db_import:
 #####################################
 # Genotype the GVCFs
 #####################################
+
 
 rule genotype_gvcfs:
     input:
@@ -182,17 +181,18 @@ rule genotype_gvcfs:
     output:
         vcf="results/genotyped/all.vcf.gz",
     log:
-        "logs/gatk/genotypegvcfs.log"
+        "logs/gatk/genotypegvcfs.log",
+    resources:
+        mem_mb=1024,
     params:
         extra="",  # optional
-        java_opts="", # optional
-    resources:
-        mem_mb=1024
+        java_opts="",  # optional
     wrapper:
         "v7.6.0/bio/gatk/genotypegvcfs"
 
 
 # include: "rules/filtering.smk"
+
 
 rule select_calls:
     input:
@@ -200,10 +200,10 @@ rule select_calls:
         vcf="results/genotyped/all.vcf.gz",
     output:
         vcf=temp("results/filtered/all.{vartype}.raw.vcf.gz"),
-    params:
-        extra=get_vartype_arg,
     log:
         "logs/gatk/selectvariants/{vartype}.log",
+    params:
+        extra=get_vartype_arg,
     wrapper:
         "v7.6.0/bio/gatk/selectvariants"
 
@@ -231,11 +231,11 @@ rule select_pass_calls:
         vcf="results/filtered/all.{vartype}.selected.vcf.gz",
     log:
         "logs/gatk/select-pass/{vartype}.log",
+    resources:
+        mem_mb=1024,
     params:
         extra="--exclude-filtered",  # optional filter arguments, see GATK docs
         java_opts="",  # optional
-    resources:
-        mem_mb=1024,
     wrapper:
         "v7.6.0/bio/gatk/selectvariants"
 
@@ -277,6 +277,8 @@ rule select_pass_calls:
 
 # include: "rules/stats.smk"
 include: "rules/qc.smk"
+
+
 # include: "rules/annotation.smk"
 
 
@@ -300,10 +302,10 @@ rule msa_ref_fasta:
         "results/msa/all.snvs.filtered.vcf.gz",
     output:
         temp("results/msa/ref.fasta"),
-    conda:
-        "envs/variant.yaml",
     log:
         "logs/bcftools/filter-msa-ref.log",
+    conda:
+        "envs/variant.yaml"
     shell:
         """
         printf ">REF\n%s\n" \
@@ -317,7 +319,7 @@ rule msa_sample_fasta:
     output:
         temp("results/msa/{sample}.fasta"),
     conda:
-        "envs/variant.yaml",
+        "envs/variant.yaml"
     log:
         "logs/bcftools/filter-msa-{sample}.log",
     shell:
@@ -330,9 +332,9 @@ rule msa_sample_fasta:
 rule concat_fasta:
     input:
         ref="results/msa/ref.fasta",
-        samples=expand("results/msa/{sample}.fasta", sample=samples.index)
+        samples=expand("results/msa/{sample}.fasta", sample=samples.index),
     output:
-        "results/msa/snvs.fasta"
+        "results/msa/snvs.fasta",
     log:
         "logs/concat_fasta.log",
     shell:
@@ -342,6 +344,7 @@ rule concat_fasta:
 
 
 # Phylogeny
+
 
 rule fasttree:
     input:
