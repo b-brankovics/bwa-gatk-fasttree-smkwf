@@ -38,7 +38,7 @@ rule fastp_trim_pe:
     shell:
         """
         fastp -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} \
-        --thread {threads} {params} --html {output.html_report} >{log} 2>&1
+            --thread {threads} {params} --html {output.html_report} >{log} 2>&1
         """
 
 
@@ -139,8 +139,8 @@ rule add_read_groups:
     shell:
         """
         picard AddOrReplaceReadGroups -I {input} -O {output} \
-        -RGID {wildcards.sample} -RGLB lib1 -RGPL {params.platform} \
-        -RGPU unit{wildcards.unit} -RGSM {wildcards.sample} 2>{log}
+            -RGID {wildcards.sample} -RGLB lib1 -RGPL {params.platform} \
+            -RGPU unit{wildcards.unit} -RGSM {wildcards.sample} 2>{log}
         """
 
 
@@ -166,7 +166,7 @@ rule mark_duplicates:
             -M {output.metrics} \
             {params} \
             --TMP_DIR tmp \
-        2>{log}
+            2>{log}
         """
 
 
