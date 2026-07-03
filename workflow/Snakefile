@@ -178,6 +178,7 @@ rule genotype_gvcfs:
         # N.B. gvcf or genomicsdb must be specified
         # in the latter case, this is a GenomicsDB data store
         ref="resources/genome.fasta",
+        fai="resources/genome.fasta.fai",
     output:
         vcf="results/genotyped/all.vcf.gz",
     log:
@@ -214,11 +215,11 @@ rule filter_calls:
         vcf="results/filtered/all.{vartype}.raw.vcf.gz",
     output:
         vcf=temp("results/filtered/all.{vartype}.hardfiltered.vcf.gz"),
+    log:
+        "logs/gatk/variantfiltration/{vartype}.log",
     params:
         filters=get_filter,
         extra="",  # optional arguments; could add --genotype-filter-expression 'GQ < 50.0' --genotype-filter-name "genotype_filters" --set-filtered-genotype-to-no-call
-    log:
-        "logs/gatk/variantfiltration/{vartype}.log",
     wrapper:
         "v7.6.0/bio/gatk/variantfiltration"
 
@@ -309,7 +310,7 @@ rule msa_ref_fasta:
     shell:
         """
         printf ">REF\n%s\n" \
-        $(bcftools query -f '%REF' {input} | tr -d '\n') > {output} 2> {log}
+            $(bcftools query -f '%REF' {input} | tr -d '\n') >{output} 2>{log}
         """
 
 
@@ -318,14 +319,14 @@ rule msa_sample_fasta:
         "results/msa/all.snvs.filtered.vcf.gz",
     output:
         temp("results/msa/{sample}.fasta"),
-    conda:
-        "envs/variant.yaml"
     log:
         "logs/bcftools/filter-msa-{sample}.log",
+    conda:
+        "envs/variant.yaml"
     shell:
         """
         printf ">{wildcards.sample}\n%s\n" \
-        $(bcftools query -s {wildcards.sample} -f '[%IUPACGT]' {input} | tr -d '\n') > {output} 2> {log}
+            $(bcftools query -s {wildcards.sample} -f '[%IUPACGT]' {input} | tr -d '\n') >{output} 2>{log}
         """
 
 
@@ -339,7 +340,7 @@ rule concat_fasta:
         "logs/concat_fasta.log",
     shell:
         """
-        cat {input.ref} {input.samples} > {output}
+        cat {input.ref} {input.samples} >{output}
         """
 
 

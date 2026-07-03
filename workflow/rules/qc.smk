@@ -34,9 +34,9 @@ rule multiqc:
     output:
         "qc/multiqc.html",
         directory("qc_data/multiqc_data"),
-    params:
-        extra="--verbose",  # Optional: extra parameters for multiqc.
     log:
         "logs/multiqc.log",
+    params:
+        extra="--verbose",  # Optional: extra parameters for multiqc.
     wrapper:
-       "v8.1.1/bio/multiqc"
+        "v8.1.1/bio/multiqc"
