@@ -129,6 +129,7 @@ rule call_variants:
         bam=get_sample_bams_dedup,
         bai=get_sample_bai_dedup,
         ref="resources/genome.fasta",
+        fai="resources/genome.fasta.fai",
         idx="resources/genome.dict",
     output:
         gvcf="results/called/{sample}.g.vcf.gz",
