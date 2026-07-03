@@ -326,7 +326,7 @@ rule msa_sample_fasta:
     shell:
         """
         printf ">{wildcards.sample}\n%s\n" \
-            $(bcftools query -s {wildcards.sample} -f '[%IUPACGT]' {input} | tr -d '\n') >{output} 2> {log}
+            $(bcftools query -s {wildcards.sample} -f '[%IUPACGT]' {input} | tr -d '\n') >{output} 2>{log}
         """
 
 
