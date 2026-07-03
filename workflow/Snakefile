@@ -178,6 +178,7 @@ rule genotype_gvcfs:
         # N.B. gvcf or genomicsdb must be specified
         # in the latter case, this is a GenomicsDB data store
         ref="resources/genome.fasta",
+        fai="resources/genome.fasta.fai",
     output:
         vcf="results/genotyped/all.vcf.gz",
     log:
