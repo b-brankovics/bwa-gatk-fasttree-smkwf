@@ -28,17 +28,17 @@ rule fastp_trim_pe:
         "logs/fastp/{sample}-{unit}.log",
     conda:
         "../envs/trimming.yaml"
+    threads: 4
     params:
         **config["params"]["fastp"]["pe"],
         # Handled via the config params above
         # adapter_auto="--detect_adapter_for_pe"
         # adapter_truseq="--adapter_sequence=AGATCGGAAGAGCACACGTCTGAACTCCAGTCA --adapter_sequence_r2=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
         # extra="--adapter_sequence AGATCGGAAGAGC"
-    threads: 4
     shell:
         """
         fastp -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} \
-        --thread {threads} {params} --html {output.html_report} > {log} 2>&1
+        --thread {threads} {params} --html {output.html_report} >{log} 2>&1
         """
 
 
@@ -52,13 +52,13 @@ rule bwa_mem:
         temp("results/mapped/{sample}-{unit}.sorted.bam"),
     log:
         "logs/bwa_mem/{sample}-{unit}.log",
+    threads: 8
     params:
         # '@RG\tID:{sample}\tSM:{sample}\tLB:lib{unit}\tPL:{platform}\tPU:unit{unit}',
         # extra=r"-R '@RG\tID:{sample}\tSM:{sample}'",
         sorting="samtools",  # Can be 'none', 'samtools' or 'picard'.
         sort_order="coordinate",  # Can be 'queryname' or 'coordinate'.
         sort_extra="",  # Extra args for samtools/picard.
-    threads: 8
     wrapper:
         "v9.9.0/bio/bwa/mem"
 
@@ -140,7 +140,7 @@ rule add_read_groups:
         """
         picard AddOrReplaceReadGroups -I {input} -O {output} \
         -RGID {wildcards.sample} -RGLB lib1 -RGPL {params.platform} \
-        -RGPU unit{wildcards.unit} -RGSM {wildcards.sample} 2> {log}
+        -RGPU unit{wildcards.unit} -RGSM {wildcards.sample} 2>{log}
         """
 
 
@@ -155,9 +155,9 @@ rule mark_duplicates:
         "logs/picard/dedup/{sample}-{unit}.log",
     conda:
         "../envs/variant.yaml"
+    threads: 4
     params:
         config["params"]["picard"]["MarkDuplicates"],
-    threads: 4
     shell:
         """
         picard MarkDuplicates \
@@ -166,7 +166,7 @@ rule mark_duplicates:
             -M {output.metrics} \
             {params} \
             --TMP_DIR tmp \
-        2> {log}
+        2>{log}
         """
 
 

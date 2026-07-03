@@ -215,11 +215,11 @@ rule filter_calls:
         vcf="results/filtered/all.{vartype}.raw.vcf.gz",
     output:
         vcf=temp("results/filtered/all.{vartype}.hardfiltered.vcf.gz"),
+    log:
+        "logs/gatk/variantfiltration/{vartype}.log",
     params:
         filters=get_filter,
         extra="",  # optional arguments; could add --genotype-filter-expression 'GQ < 50.0' --genotype-filter-name "genotype_filters" --set-filtered-genotype-to-no-call
-    log:
-        "logs/gatk/variantfiltration/{vartype}.log",
     wrapper:
         "v7.6.0/bio/gatk/variantfiltration"
 
@@ -310,7 +310,7 @@ rule msa_ref_fasta:
     shell:
         """
         printf ">REF\n%s\n" \
-        $(bcftools query -f '%REF' {input} | tr -d '\n') > {output} 2> {log}
+        $(bcftools query -f '%REF' {input} | tr -d '\n') > {output} 2>{log}
         """
 
 
@@ -340,7 +340,7 @@ rule concat_fasta:
         "logs/concat_fasta.log",
     shell:
         """
-        cat {input.ref} {input.samples} > {output}
+        cat {input.ref} {input.samples} >{output}
         """
 
 
