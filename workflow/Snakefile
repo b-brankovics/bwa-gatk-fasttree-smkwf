@@ -319,10 +319,10 @@ rule msa_sample_fasta:
         "results/msa/all.snvs.filtered.vcf.gz",
     output:
         temp("results/msa/{sample}.fasta"),
-    conda:
-        "envs/variant.yaml"
     log:
         "logs/bcftools/filter-msa-{sample}.log",
+    conda:
+        "envs/variant.yaml"
     shell:
         """
         printf ">{wildcards.sample}\n%s\n" \
