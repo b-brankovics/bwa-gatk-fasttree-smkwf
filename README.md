@@ -1,7 +1,7 @@
 # bwa-gatk-fasttree workflow
 
 [![Snakemake](https://img.shields.io/badge/snakemake-≥8.0.0-brightgreen.svg)](https://snakemake.github.io)
-[![GitHub actions status](ttps://github.com/b-brankovics/bwa-gatk-fasttree-smkwf/actions/workflows/main.yaml/badge.svg?branch=main))](https://github.com/b-brankovics/bwa-gatk-fasttree-smkwf/actions?query=branch%3Amain+workflow%3ATests)
+[![GitHub actions status](https://github.com/b-brankovics/bwa-gatk-fasttree-smkwf/actions/workflows/main.yaml/badge.svg?branch=main))](https://github.com/b-brankovics/bwa-gatk-fasttree-smkwf/actions?query=branch%3Amain+workflow%3ATests)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![workflow catalog](https://img.shields.io/badge/Snakemake%20workflow%20catalog-darkgreen)](https://snakemake.github.io/snakemake-workflow-catalog/docs/workflows/b-brankovics/bwa-gatk-fasttree-smkwf)
 
