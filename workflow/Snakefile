@@ -179,6 +179,7 @@ rule genotype_gvcfs:
         # in the latter case, this is a GenomicsDB data store
         ref="resources/genome.fasta",
         fai="resources/genome.fasta.fai",
+        idx="resources/genome.dict",
     output:
         vcf="results/genotyped/all.vcf.gz",
     log:
@@ -199,6 +200,7 @@ rule select_calls:
     input:
         ref="resources/genome.fasta",
         fai="resources/genome.fasta.fai",
+        idx="resources/genome.dict",
         vcf="results/genotyped/all.vcf.gz",
     output:
         vcf=temp("results/filtered/all.{vartype}.raw.vcf.gz"),
@@ -214,6 +216,7 @@ rule filter_calls:
     input:
         ref="resources/genome.fasta",
         fai="resources/genome.fasta.fai",
+        idx="resources/genome.dict",
         vcf="results/filtered/all.{vartype}.raw.vcf.gz",
     output:
         vcf=temp("results/filtered/all.{vartype}.hardfiltered.vcf.gz"),
@@ -231,6 +234,7 @@ rule select_pass_calls:
         vcf="results/filtered/all.{vartype}.hardfiltered.vcf.gz",
         ref="resources/genome.fasta",
         fai="resources/genome.fasta.fai",
+        idx="resources/genome.dict",
     output:
         vcf="results/filtered/all.{vartype}.selected.vcf.gz",
     log:
