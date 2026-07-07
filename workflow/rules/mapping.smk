@@ -178,10 +178,8 @@ rule samtools_index:
         "{prefix}.bam.bai",
     log:
         "logs/samtools/index/{prefix}.log",
-    conda:
-        "../envs/variant.yaml"
     wrapper:
-        "0.74.0/bio/samtools/index"
+        "v9.4.1/bio/samtools/index"
 
 
 # Recalibration requires known sites of variation; skipped for now
